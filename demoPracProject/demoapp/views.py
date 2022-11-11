@@ -1,6 +1,10 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from demoapp.models import EmployeeDetails,InsuaranceDetails
+from django.contrib.auth.models import User
+from rest_framework import status, viewsets
+from .serializers import EmployeeDetailsSerializer
+from rest_framework.response import Response
 
 # Create your views here.
 def index(request):
@@ -54,3 +58,31 @@ def policy(request):
         except Exception as e:
             print(e)
     return render(request,"policy.html")
+
+
+
+class EmployeeDetailsViewset(viewsets.ViewSet):
+    queryset = EmployeeDetails.objects.all()
+    serializer_class = EmployeeDetailsSerializer
+
+    def list(self, request):
+        get_all_employee = EmployeeDetails.objects.all()
+        data = EmployeeDetailsSerializer(get_all_employee,many=True)
+        return Response({'data': data.data}, content_type = 'application/json' )
+    
+    def destroy(self, request, id):
+        user_name = EmployeeDetails.objects.filter(id=id)
+        user_name = user_name.full_name
+        EmployeeDetails.objects.filter(id=id).delete()
+        return Response({'data':f" {user_name} user is deleted"}, 
+                        content_type = 'application/json' )
+
+    def create(self, request):
+        #postEmpData = request.data
+        #print(postEmpData)
+        dataSeriealizer = EmployeeDetailsSerializer(data = request.data)
+        if dataSeriealizer.is_valid():
+            dataSeriealizer.save()
+            return Response({'data': dataSeriealizer.data}, content_type = 'application/json')
+        else:
+            return Response(dataSeriealizer.errors)
